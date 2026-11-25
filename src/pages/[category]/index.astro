@@ -1,0 +1,69 @@
+---
+import { getImage } from 'astro:assets';
+import Base from '../../layouts/Base.astro';
+import AlbumCard from '../../components/AlbumCard.astro';
+import JustifiedGallery from '../../components/JustifiedGallery.astro';
+import BookingCta from '../../components/BookingCta.astro';
+import { categories, type Category } from '../../site.config';
+import { getAlbums } from '../../lib/photos';
+
+export function getStaticPaths() {
+  return categories.map((category) => ({ params: { category: category.id }, props: { category } }));
+}
+
+const { category } = Astro.props as { category: Category };
+const albums = getAlbums(category.id);
+// One album → show its photos directly. Several → show them as album cards.
+const single = albums.length === 1 ? albums[0] : undefined;
+const cover = albums[0]?.cover;
+const ogImage = cover ? (await getImage({ src: cover.image, width: 1200, format: 'jpg' })).src : undefined;
+---
+
+<Base title={category.heading} description={category.intro} image={ogImage}>
+  <header class="page-head container">
+    <span class="eyebrow">Portfolio</span>
+    <h1>{category.heading}</h1>
+    <p class="lead">{category.intro}</p>
+  </header>
+
+  <section class="container gallery-wrap">
+    {albums.length === 0 && <p class="empty">New work coming soon.</p>}
+    {single && <JustifiedGallery photos={single.photos} />}
+    {
+      albums.length > 1 && (
+        <div class="albums">
+          {albums.map((a, i) => (
+            <AlbumCard album={a} eager={i < 3} />
+          ))}
+        </div>
+      )
+    }
+  </section>
+
+  <BookingCta title={`Planning a ${category.title.toLowerCase()} session?`} type={category.id} />
+</Base>
+
+<style>
+  .gallery-wrap {
+    padding-bottom: clamp(64px, 10vw, 120px);
+  }
+  .albums {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: clamp(32px, 4vw, 56px) clamp(16px, 2.4vw, 36px);
+  }
+  .empty {
+    text-align: center;
+    color: var(--muted);
+  }
+  @media (max-width: 1000px) {
+    .albums {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 600px) {
+    .albums {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

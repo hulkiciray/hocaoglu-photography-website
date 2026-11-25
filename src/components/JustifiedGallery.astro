@@ -1,0 +1,138 @@
+---
+/**
+ * Justified photo grid: every row has the same height and photos keep their natural proportions
+ * (nothing gets cropped). Clicking a photo opens it full screen in the lightbox.
+ */
+import { Picture, getImage } from 'astro:assets';
+import type { Photo } from '../lib/photos';
+
+interface Props {
+  photos: Photo[];
+  /** Target row height on desktop in px. */
+  rowHeight?: number;
+  /** Number of photos loaded immediately (the rest load as you scroll). */
+  eager?: number;
+}
+
+const { photos, rowHeight = 300, eager = 4 } = Astro.props;
+
+const FULL_WIDTH = 2400;
+const items = await Promise.all(
+  photos.map(async (p) => {
+    const width = Math.min(FULL_WIDTH, p.image.width);
+    const height = Math.round((p.image.height * width) / p.image.width);
+    const full = await getImage({ src: p.image, width, format: 'webp', quality: 85 });
+    return { ...p, full: full.src, width, height, ar: (p.image.width / p.image.height).toFixed(4) };
+  }),
+);
+---
+
+<div class="jg" data-lightbox style={`--row-h:${rowHeight}px`}>
+  {
+    items.map((p, i) => (
+      <a
+        class="jg-item fade-img"
+        href={p.full}
+        data-pswp-width={p.width}
+        data-pswp-height={p.height}
+        style={`--ar:${p.ar}`}
+      >
+        <Picture
+          src={p.image}
+          formats={['avif', 'webp']}
+          widths={[480, 800, 1200]}
+          sizes="(max-width: 640px) 100vw, (max-width: 1100px) 50vw, 34vw"
+          alt={p.alt}
+          loading={i < eager ? 'eager' : 'lazy'}
+          decoding="async"
+        />
+      </a>
+    ))
+  }
+</div>
+
+<style>
+  .jg {
+    display: flex;
+    flex-wrap: wrap;
+    gap: clamp(6px, 0.8vw, 12px);
+  }
+
+  /* Stops the last row from stretching to full width. */
+  .jg::after {
+    content: '';
+    flex-grow: 999999;
+  }
+
+  .jg-item {
+    position: relative;
+    display: block;
+    flex-grow: var(--ar);
+    flex-basis: calc(var(--ar) * var(--row-h));
+    aspect-ratio: var(--ar);
+    overflow: hidden;
+    background: var(--placeholder);
+    cursor: zoom-in;
+  }
+
+  .jg-item :global(picture),
+  .jg-item :global(img) {
+    width: 100%;
+    height: 100%;
+  }
+
+  .jg-item :global(img) {
+    object-fit: cover;
+    transition:
+      transform 1.2s var(--ease),
+      opacity 0.7s var(--ease) !important;
+  }
+
+  .jg-item:hover :global(img) {
+    transform: scale(1.035);
+  }
+
+  @media (max-width: 900px) {
+    .jg {
+      --row-h: 220px !important;
+    }
+  }
+  @media (max-width: 520px) {
+    .jg {
+      --row-h: 160px !important;
+    }
+  }
+</style>
+
+<script>
+  import PhotoSwipeLightbox from 'photoswipe/lightbox';
+  import 'photoswipe/style.css';
+
+  document.querySelectorAll<HTMLElement>('[data-lightbox]').forEach((gallery) => {
+    const lightbox = new PhotoSwipeLightbox({
+      gallery,
+      children: 'a',
+      pswpModule: () => import('photoswipe'),
+      bgOpacity: 0.97,
+      showHideAnimationType: 'zoom',
+      imageClickAction: 'zoom',
+      tapAction: 'toggle-controls',
+      preload: [1, 2],
+      paddingFn: (viewport) => (viewport.x > 900 ? { top: 40, bottom: 40, left: 72, right: 72 } : { top: 0, bottom: 0, left: 0, right: 0 }),
+    });
+    lightbox.init();
+  });
+</script>
+
+<style is:global>
+  .pswp {
+    --pswp-bg: #12100e;
+    --pswp-icon-color: #f2ede5;
+  }
+  .pswp__counter {
+    font-family: var(--sans);
+    font-size: 0.8rem;
+    letter-spacing: 0.15em;
+    opacity: 0.75;
+  }
+</style>

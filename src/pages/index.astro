@@ -1,0 +1,414 @@
+---
+import { Picture, getImage } from 'astro:assets';
+import Base from '../layouts/Base.astro';
+import JustifiedGallery from '../components/JustifiedGallery.astro';
+import BookingCta from '../components/BookingCta.astro';
+import { categories, site, testimonials } from '../site.config';
+import { getAlbums, getCategoryCover, type Photo } from '../lib/photos';
+import aboutPhoto from '../assets/about.jpg';
+
+// Hero slideshow: one cover per category first, then other album covers (max 6).
+const covers = categories.map((c) => getCategoryCover(c.id)).filter((p): p is Photo => !!p);
+const extra = getAlbums()
+  .map((a) => a.cover)
+  .filter((p) => !covers.includes(p));
+const heroPhotos = [...covers, ...extra].slice(0, 6);
+
+// "Selected work": a mix across all albums, interleaved by category.
+const perCategory = categories.map((c) => getAlbums(c.id).flatMap((a) => a.photos.slice(1, 3)));
+const selected: Photo[] = [];
+for (let i = 0; selected.length < 12 && perCategory.some((list) => list[i]); i++) {
+  for (const list of perCategory) if (list[i] && selected.length < 12) selected.push(list[i]);
+}
+
+const ogImage = heroPhotos[0] ? (await getImage({ src: heroPhotos[0].image, width: 1200, format: 'jpg' })).src : undefined;
+---
+
+<Base overlayHeader image={ogImage}>
+  <!-- Hero -->
+  <section class="hero" aria-label="Introduction">
+    <div class="slides" data-slides>
+      {
+        heroPhotos.map((p, i) => (
+          <div class:list={['slide', { 'is-active': i === 0 }]}>
+            <Picture
+              src={p.image}
+              formats={['avif', 'webp']}
+              widths={[800, 1400, 2000]}
+              sizes="100vw"
+              alt={p.alt}
+              loading={i === 0 ? 'eager' : 'lazy'}
+              fetchpriority={i === 0 ? 'high' : 'auto'}
+            />
+          </div>
+        ))
+      }
+    </div>
+    <div class="hero-shade"></div>
+    <div class="hero-content container">
+      <span class="eyebrow">{site.city} · Photographer</span>
+      <h1>{site.name}</h1>
+      <p>{site.tagline}</p>
+      <div class="hero-actions">
+        <a class="btn btn--light" href="#portfolio">View portfolio</a>
+        <a class="btn btn--light" href="/contact/">Book a session</a>
+      </div>
+    </div>
+    <a class="scroll-hint" href="#portfolio" aria-label="Scroll to portfolio"><span></span></a>
+  </section>
+
+  <!-- Categories -->
+  <section id="portfolio" class="section">
+    <div class="container">
+      <div class="section-head" data-reveal>
+        <span class="eyebrow">Portfolio</span>
+        <h2>Moments worth keeping</h2>
+        <p class="lead">
+          Natural, honest photographs of the people you love, from the very first days to the biggest day of your
+          life.
+        </p>
+      </div>
+
+      <div class="tiles">
+        {
+          categories.map((c, i) => {
+            const cover = getCategoryCover(c.id);
+            return (
+              <a class="tile" href={`/${c.id}/`} data-reveal style={`transition-delay:${i * 80}ms`}>
+                <div class="tile-img fade-img">
+                  {cover && (
+                    <Picture
+                      src={cover.image}
+                      formats={['avif', 'webp']}
+                      widths={[480, 800, 1100]}
+                      sizes="(max-width: 600px) 100vw, (max-width: 1100px) 50vw, 25vw"
+                      alt={cover.alt}
+                    />
+                  )}
+                </div>
+                <div class="tile-label">
+                  <h3>{c.title}</h3>
+                  <span>{c.blurb}</span>
+                </div>
+              </a>
+            );
+          })
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- About teaser -->
+  <section class="section section--alt">
+    <div class="container about">
+      <div class="about-img fade-img" data-reveal>
+        <Picture
+          src={aboutPhoto}
+          formats={['avif', 'webp']}
+          widths={[480, 900]}
+          sizes="(max-width: 860px) 100vw, 40vw"
+          alt={`Portrait of the photographer, ${site.name}`}
+        />
+      </div>
+      <div class="about-text" data-reveal>
+        <span class="eyebrow">Hello, I'm Ismail</span>
+        <h2>Photographs that feel like you</h2>
+        <p>
+          I photograph newborns, children, families and weddings with a quiet, documentary eye. My sessions are
+          relaxed and unposed, with no pressure to perform, so what ends up in the frame is real: the tiny hands, the
+          belly laughs, the look across the room.
+        </p>
+        <p>
+          Every gallery is edited by hand in a warm, timeless style that will still feel right in twenty years.
+        </p>
+        <a class="link-arrow" href="/about/">More about me</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Selected work -->
+  {
+    selected.length > 0 && (
+      <section class="section">
+        <div class="container">
+          <div class="section-head" data-reveal>
+            <span class="eyebrow">Selected work</span>
+            <h2>Recent favourites</h2>
+          </div>
+          <JustifiedGallery photos={selected} rowHeight={280} eager={0} />
+        </div>
+      </section>
+    )
+  }
+
+  <!-- Testimonials -->
+  <section class="section section--alt">
+    <div class="container">
+      <div class="section-head" data-reveal>
+        <span class="eyebrow">Kind words</span>
+        <h2>From the people I've photographed</h2>
+      </div>
+      <div class="quotes">
+        {
+          testimonials.map((t) => (
+            <figure class="quote" data-reveal>
+              <blockquote>“{t.quote}”</blockquote>
+              <figcaption>
+                <strong>{t.name}</strong>
+                <span>{t.session}</span>
+              </figcaption>
+            </figure>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <BookingCta />
+</Base>
+
+<style>
+  /* Hero */
+  .hero {
+    position: relative;
+    height: 100svh;
+    min-height: 560px;
+    color: #fff;
+    display: flex;
+    align-items: flex-end;
+    overflow: hidden;
+    background: var(--dark);
+  }
+
+  .slides,
+  .slide,
+  .hero-shade {
+    position: absolute;
+    inset: 0;
+  }
+
+  .slide {
+    opacity: 0;
+    transition: opacity 1.8s var(--ease);
+  }
+  .slide.is-active {
+    opacity: 1;
+  }
+  .slide :global(picture),
+  .slide :global(img) {
+    width: 100%;
+    height: 100%;
+  }
+  .slide :global(img) {
+    object-fit: cover;
+    transform: scale(1.06);
+    transition: transform 9s linear;
+  }
+  .slide.is-active :global(img) {
+    transform: scale(1);
+  }
+
+  .hero-shade {
+    background:
+      linear-gradient(to top, rgba(20, 16, 13, 0.62), rgba(20, 16, 13, 0) 55%),
+      linear-gradient(to bottom, rgba(20, 16, 13, 0.35), rgba(20, 16, 13, 0) 22%);
+  }
+
+  .hero-content {
+    position: relative;
+    padding-bottom: clamp(72px, 12vh, 140px);
+  }
+  .hero-content .eyebrow {
+    color: rgba(255, 255, 255, 0.85);
+  }
+  .hero-content h1 {
+    font-size: clamp(3rem, 9vw, 7rem);
+    margin-bottom: 0.1em;
+  }
+  .hero-content p {
+    font-size: clamp(1.05rem, 1.8vw, 1.3rem);
+    margin-bottom: 2rem;
+    opacity: 0.92;
+  }
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .scroll-hint {
+    position: absolute;
+    left: 50%;
+    bottom: 26px;
+    width: 1px;
+    height: 48px;
+    background: rgba(255, 255, 255, 0.35);
+    overflow: hidden;
+  }
+  .scroll-hint span {
+    position: absolute;
+    inset: 0;
+    background: #fff;
+    animation: drip 2.2s var(--ease) infinite;
+  }
+  @keyframes drip {
+    from {
+      transform: translateY(-100%);
+    }
+    to {
+      transform: translateY(100%);
+    }
+  }
+
+  /* Category tiles */
+  .tiles {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: clamp(10px, 1.4vw, 20px);
+  }
+  .tile {
+    position: relative;
+    display: block;
+    color: #fff;
+    text-decoration: none;
+    overflow: hidden;
+    background: var(--placeholder);
+  }
+  .tile-img {
+    aspect-ratio: 3 / 4.4;
+  }
+  .tile-img :global(picture),
+  .tile-img :global(img) {
+    width: 100%;
+    height: 100%;
+  }
+  .tile-img :global(img) {
+    object-fit: cover;
+    transition:
+      transform 1.4s var(--ease),
+      opacity 0.7s var(--ease) !important;
+  }
+  .tile:hover .tile-img :global(img) {
+    transform: scale(1.06);
+  }
+  .tile::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(20, 16, 13, 0.6), rgba(20, 16, 13, 0) 50%);
+    transition: background 0.5s var(--ease);
+  }
+  .tile:hover::after {
+    background: linear-gradient(to top, rgba(20, 16, 13, 0.7), rgba(20, 16, 13, 0.15) 70%);
+  }
+  .tile-label {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+    padding: clamp(18px, 2vw, 28px);
+    text-align: center;
+  }
+  .tile-label h3 {
+    font-size: clamp(1.8rem, 2.6vw, 2.4rem);
+    margin-bottom: 0.15rem;
+  }
+  .tile-label span {
+    font-size: 0.72rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    opacity: 0.9;
+  }
+
+  /* About teaser */
+  .about {
+    display: grid;
+    grid-template-columns: 5fr 6fr;
+    gap: clamp(32px, 6vw, 96px);
+    align-items: center;
+  }
+  .about-img {
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    background: var(--placeholder);
+  }
+  .about-img :global(picture),
+  .about-img :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* Testimonials */
+  .quotes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: clamp(24px, 3vw, 48px);
+  }
+  .quote {
+    margin: 0;
+    padding: clamp(24px, 3vw, 40px);
+    background: var(--surface);
+    border: 1px solid var(--line);
+  }
+  .quote blockquote {
+    margin: 0 0 1.4rem;
+    font-family: var(--serif);
+    font-size: 1.35rem;
+    font-style: italic;
+    line-height: 1.45;
+  }
+  .quote figcaption {
+    display: grid;
+    font-size: 0.85rem;
+  }
+  .quote figcaption strong {
+    font-weight: 500;
+  }
+  .quote figcaption span {
+    color: var(--muted);
+  }
+
+  @media (max-width: 1100px) {
+    .tiles {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .tile-img {
+      aspect-ratio: 4 / 5;
+    }
+  }
+  @media (max-width: 860px) {
+    .about,
+    .quotes {
+      grid-template-columns: 1fr;
+    }
+  }
+  @media (max-width: 560px) {
+    .tiles {
+      grid-template-columns: 1fr;
+    }
+    .tile-img {
+      aspect-ratio: 4 / 3.6;
+    }
+  }
+</style>
+
+<script>
+  // Crossfade the hero images every 6 seconds (paused for people who prefer reduced motion).
+  const slides = [...document.querySelectorAll<HTMLElement>('[data-slides] .slide')];
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (slides.length > 1 && !reduce) {
+    let i = 0;
+    setInterval(() => {
+      const next = (i + 1) % slides.length;
+      // Make sure the next image starts downloading before it fades in.
+      slides[next].querySelector('img')?.setAttribute('loading', 'eager');
+      slides[i].classList.remove('is-active');
+      slides[next].classList.add('is-active');
+      i = next;
+    }, 6000);
+    // Warm up the second slide shortly after load.
+    setTimeout(() => slides[1].querySelector('img')?.setAttribute('loading', 'eager'), 1500);
+  }
+</script>

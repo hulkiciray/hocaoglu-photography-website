@@ -1,0 +1,129 @@
+---
+import { getImage } from 'astro:assets';
+import Base from '../../layouts/Base.astro';
+import JustifiedGallery from '../../components/JustifiedGallery.astro';
+import BookingCta from '../../components/BookingCta.astro';
+import { categories, type Category } from '../../site.config';
+import { albumUrl, formatDate, getAlbums, type Album } from '../../lib/photos';
+
+export function getStaticPaths() {
+  return categories.flatMap((category) => {
+    const albums = getAlbums(category.id);
+    return albums.map((album, i) => ({
+      params: { category: category.id, album: album.slug },
+      props: {
+        category,
+        album,
+        prev: albums[i - 1] ?? albums[albums.length - 1],
+        next: albums[i + 1] ?? albums[0],
+      },
+    }));
+  });
+}
+
+const { category, album, prev, next } = Astro.props as {
+  category: Category;
+  album: Album;
+  prev: Album;
+  next: Album;
+};
+const meta = [album.location, formatDate(album.date)].filter(Boolean).join(' · ');
+const ogImage = (await getImage({ src: album.cover.image, width: 1200, format: 'jpg' })).src;
+const hasSiblings = prev.slug !== album.slug;
+---
+
+<Base
+  title={`${album.title} | ${category.heading}`}
+  description={album.description ?? album.subtitle ?? category.intro}
+  image={ogImage}
+>
+  <header class="page-head container">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href={`/${category.id}/`}>{category.heading}</a>
+    </nav>
+    <h1>{album.title}</h1>
+    {album.subtitle && <p class="lead">{album.subtitle}</p>}
+    {meta && <span class="eyebrow meta">{meta}</span>}
+    {album.description && <p class="desc">{album.description}</p>}
+  </header>
+
+  <section class="container">
+    <JustifiedGallery photos={album.photos} />
+  </section>
+
+  {
+    hasSiblings && (
+      <nav class="container pager" aria-label="More albums">
+        <a href={albumUrl(prev)}>
+          <span>Previous</span>
+          {prev.title}
+        </a>
+        <a href={`/${category.id}/`} class="all">
+          All {category.title.toLowerCase()}
+        </a>
+        <a href={albumUrl(next)} class="next">
+          <span>Next</span>
+          {next.title}
+        </a>
+      </nav>
+    )
+  }
+
+  <BookingCta title={`Planning a ${category.title.toLowerCase()} session?`} type={category.id} />
+</Base>
+
+<style>
+  .meta {
+    margin-top: 0.4rem;
+  }
+  .desc {
+    max-width: 640px;
+  }
+  .pager {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 16px;
+    padding-block: clamp(48px, 7vw, 88px);
+  }
+  .pager a {
+    display: grid;
+    text-decoration: none;
+    font-family: var(--serif);
+    font-size: 1.5rem;
+    line-height: 1.3;
+  }
+  .pager a:hover {
+    color: var(--accent);
+  }
+  .pager span {
+    font-family: var(--sans);
+    font-size: 0.7rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .pager .all {
+    font-family: var(--sans);
+    font-size: 0.74rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    border-bottom: 1px solid currentColor;
+  }
+  .pager .next {
+    text-align: right;
+  }
+  @media (max-width: 640px) {
+    .pager {
+      grid-template-columns: 1fr 1fr;
+    }
+    .pager .all {
+      grid-column: 1 / -1;
+      grid-row: 2;
+      justify-self: center;
+    }
+    .pager a {
+      font-size: 1.2rem;
+    }
+  }
+</style>
