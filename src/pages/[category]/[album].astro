@@ -1,4 +1,5 @@
 ---
+import { url } from "../../lib/url";
 import { getImage } from 'astro:assets';
 import Base from '../../layouts/Base.astro';
 import JustifiedGallery from '../../components/JustifiedGallery.astro';
@@ -39,7 +40,7 @@ const hasSiblings = prev.slug !== album.slug;
 >
   <header class="page-head container">
     <nav class="breadcrumb" aria-label="Breadcrumb">
-      <a href={`/${category.id}/`}>{category.heading}</a>
+      <a href={url(`/${category.id}/`)}>{category.heading}</a>
     </nav>
     <h1>{album.title}</h1>
     {album.subtitle && <p class="lead">{album.subtitle}</p>}
@@ -58,7 +59,7 @@ const hasSiblings = prev.slug !== album.slug;
           <span>Previous</span>
           {prev.title}
         </a>
-        <a href={`/${category.id}/`} class="all">
+        <a href={url(`/${category.id}/`)} class="all">
           All {category.title.toLowerCase()}
         </a>
         <a href={albumUrl(next)} class="next">

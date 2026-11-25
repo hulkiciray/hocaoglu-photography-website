@@ -25,6 +25,9 @@ export const site = {
    * e.g. 'https://formspree.io/f/abcdwxyz'. While it's empty, the form opens the visitor's email app instead.
    */
   formEndpoint: '',
+
+  /** Keeps search engines away while the site still shows placeholder photos. Set to false at launch. */
+  hideFromSearchEngines: true,
 };
 
 export type CategoryId = 'newborn' | 'children' | 'weddings' | 'custom';

@@ -8,6 +8,7 @@
  */
 import type { ImageMetadata } from 'astro';
 import { categories, type Category, type CategoryId } from '../site.config';
+import { url } from './url';
 
 export interface AlbumInfo {
   title?: string;
@@ -118,7 +119,7 @@ export const getAlbum = (category: string, slug: string): Album | undefined =>
 /** Cover photo for a category tile: the first album's cover. */
 export const getCategoryCover = (category: CategoryId): Photo | undefined => getAlbums(category)[0]?.cover;
 
-export const albumUrl = (a: Pick<Album, 'category' | 'slug'>) => `/${a.category}/${a.slug}/`;
+export const albumUrl = (a: Pick<Album, 'category' | 'slug'>) => url(`/${a.category}/${a.slug}/`);
 
 /** Formats "2026-06" as "June 2026"; any other text is returned unchanged. */
 export function formatDate(date?: string): string | undefined {

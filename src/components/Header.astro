@@ -1,4 +1,5 @@
 ---
+import { url } from "../lib/url";
 import { categories, site } from '../site.config';
 
 interface Props {
@@ -6,18 +7,18 @@ interface Props {
 }
 const { overlay = false } = Astro.props;
 const path = Astro.url.pathname;
-const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWith(href));
+const isActive = (href: string) => (href === url('/') ? path === href : path.startsWith(href));
 
 const links = [
-  ...categories.map((c) => ({ href: `/${c.id}/`, label: c.title })),
-  { href: '/about/', label: 'About' },
-  { href: '/contact/', label: 'Contact' },
+  ...categories.map((c) => ({ href: url(`/${c.id}/`), label: c.title })),
+  { href: url('/about/'), label: 'About' },
+  { href: url('/contact/'), label: 'Contact' },
 ];
 ---
 
 <header class:list={['site-header', { 'is-overlay': overlay }]} data-header>
   <div class="bar container">
-    <a href="/" class="logo">{site.name}</a>
+    <a href={url("/")} class="logo">{site.name}</a>
 
     <button class="menu-toggle" aria-expanded="false" aria-controls="site-nav" data-menu-toggle>
       <span class="visually-hidden">Menu</span>

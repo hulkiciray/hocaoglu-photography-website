@@ -7,7 +7,8 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "placeholders": "bun scripts/make-placeholders.mjs"
+    "placeholders": "bun scripts/make-placeholders.mjs",
+    "deploy": "bash scripts/deploy.sh"
   },
   "dependencies": {
     "astro": "^5.13.0",

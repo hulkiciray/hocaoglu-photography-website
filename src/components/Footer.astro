@@ -1,4 +1,5 @@
 ---
+import { url } from "../lib/url";
 import { categories, site } from '../site.config';
 const year = new Date().getFullYear();
 ---
@@ -6,14 +7,14 @@ const year = new Date().getFullYear();
 <footer class="site-footer">
   <div class="container grid">
     <div>
-      <a href="/" class="logo">{site.name}</a>
+      <a href={url("/")} class="logo">{site.name}</a>
       <p class="muted">{site.tagline}. Based in {site.city}, available for travel.</p>
     </div>
 
     <div>
       <h4>Portfolio</h4>
       <ul>
-        {categories.map((c) => <li><a href={`/${c.id}/`}>{c.heading}</a></li>)}
+        {categories.map((c) => <li><a href={url(`/${c.id}/`)}>{c.heading}</a></li>)}
       </ul>
     </div>
 
@@ -23,7 +24,7 @@ const year = new Date().getFullYear();
         <li><a href={`mailto:${site.email}`}>{site.email}</a></li>
         {site.whatsapp && <li><a href={`https://wa.me/${site.whatsapp}`} rel="noopener" target="_blank">WhatsApp</a></li>}
         <li><a href={site.instagramUrl} rel="noopener" target="_blank">Instagram {site.instagramHandle}</a></li>
-        <li><a href="/contact/">Booking enquiry</a></li>
+        <li><a href={url("/contact/")}>Booking enquiry</a></li>
       </ul>
     </div>
   </div>

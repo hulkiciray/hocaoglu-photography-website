@@ -1,4 +1,5 @@
 ---
+import { url } from "../lib/url";
 import { Picture } from 'astro:assets';
 import Base from '../layouts/Base.astro';
 import BookingCta from '../components/BookingCta.astro';
@@ -84,7 +85,7 @@ const steps = [
       <div class="sessions">
         {
           categories.map((c) => (
-            <a href={`/${c.id}/`} class="session" data-reveal>
+            <a href={url(`/${c.id}/`)} class="session" data-reveal>
               <h3>{c.heading}</h3>
               <p>{c.intro}</p>
               <span class="link-arrow">View gallery</span>

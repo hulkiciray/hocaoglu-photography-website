@@ -36,8 +36,10 @@ function removeUnusedOriginals() {
 }
 
 export default defineConfig({
-  // Change this to the real domain before deploying (used for canonical URLs / social cards).
-  site: 'https://example.com',
+  // Live address. Hosted on GitHub Pages in the /ismail-website/ sub-folder.
+  // With your own domain later: set `site` to it (e.g. 'https://ismailphotography.com') and remove `base`.
+  site: 'https://hulkiciray.github.io',
+  base: '/ismail-website',
   // Turn off the floating dev toolbar so it doesn't cover the photos while you work.
   devToolbar: { enabled: false },
   integrations: [removeUnusedOriginals()],
