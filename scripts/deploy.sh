@@ -20,4 +20,4 @@ git -c user.name="$(git -C "$OLDPWD" config user.name)" -c user.email="$(git -C 
   commit -q -m "Deploy $(date -u '+%Y-%m-%d %H:%M UTC')"
 git push -f -q "$remote" gh-pages
 
-echo "Deployed. Live in about a minute at: https://hulkiciray.github.io/ismail-website/"
+echo "Deployed. Live in about a minute at: https://hulkiciray.github.io/hocaoglu-photography-website/"
