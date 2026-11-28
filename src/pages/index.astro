@@ -2,10 +2,10 @@
 import { url } from "../lib/url";
 import { Picture, getImage } from 'astro:assets';
 import Base from '../layouts/Base.astro';
-import JustifiedGallery from '../components/JustifiedGallery.astro';
+import ExhibitionWall, { type WallItem } from '../components/ExhibitionWall.astro';
 import BookingCta from '../components/BookingCta.astro';
 import { categories, site, testimonials } from '../site.config';
-import { getAlbums, getCategoryCover, type Photo } from '../lib/photos';
+import { getAlbums, getCategoryCover, yearOf, type Photo } from '../lib/photos';
 import aboutPhoto from '../assets/about.jpg';
 
 // Hero slideshow: one cover per category first, then other album covers (max 6).
@@ -15,11 +15,18 @@ const extra = getAlbums()
   .filter((p) => !covers.includes(p));
 const heroPhotos = [...covers, ...extra].slice(0, 6);
 
-// "Selected work": a mix across all albums, interleaved by category.
-const perCategory = categories.map((c) => getAlbums(c.id).flatMap((a) => a.photos.slice(1, 3)));
-const selected: Photo[] = [];
-for (let i = 0; selected.length < 12 && perCategory.some((list) => list[i]); i++) {
-  for (const list of perCategory) if (list[i] && selected.length < 12) selected.push(list[i]);
+// "Now showing" wall: one framed print per album (its 2nd photo, so it differs from the cover),
+// interleaved by category so the wall mixes newborn, children, weddings and custom work.
+const perCategory = categories.map((c) =>
+  getAlbums(c.id).map((album) => ({
+    photo: album.photos[1] ?? album.cover,
+    title: album.title,
+    meta: [c.title, album.location, yearOf(album.date)].filter(Boolean).join(' · '),
+  })),
+);
+const wall: WallItem[] = [];
+for (let i = 0; wall.length < 8 && perCategory.some((list) => list[i]); i++) {
+  for (const list of perCategory) if (list[i] && wall.length < 8) wall.push(list[i]);
 }
 
 const ogImage = heroPhotos[0] ? (await getImage({ src: heroPhotos[0].image, width: 1200, format: 'jpg' })).src : undefined;
@@ -127,18 +134,16 @@ const ogImage = heroPhotos[0] ? (await getImage({ src: heroPhotos[0].image, widt
     </div>
   </section>
 
-  <!-- Selected work -->
+  <!-- Selected work, hung as an exhibition -->
   {
-    selected.length > 0 && (
-      <section class="section">
-        <div class="container">
-          <div class="section-head" data-reveal>
-            <span class="eyebrow">Selected work</span>
-            <h2>Recent favourites</h2>
-          </div>
-          <JustifiedGallery photos={selected} rowHeight={280} eager={0} />
+    wall.length > 0 && (
+      <ExhibitionWall items={wall}>
+        <div class="section-head" data-reveal>
+          <span class="eyebrow">Now showing</span>
+          <h2>Selected works</h2>
+          <p class="lead">A small exhibition of recent favourites. Click any print to see it up close.</p>
         </div>
-      </section>
+      </ExhibitionWall>
     )
   }
 

@@ -2,5 +2,11 @@
   "title": "Ayşe, Maternity",
   "subtitle": "Waiting for the little one",
   "location": "Studio",
-  "date": "2026-08"
+  "date": "2026-08",
+  "layout": "exhibition",
+  "captions": {
+    "01.jpg": "Waiting",
+    "03.jpg": "Morning light",
+    "05.jpg": "Hands"
+  }
 }

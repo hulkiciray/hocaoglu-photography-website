@@ -21,12 +21,19 @@ export interface AlbumInfo {
   cover?: string;
   /** Lower numbers come first. Albums without it are sorted by date. */
   order?: number;
+  /** How the album is shown: 'grid' (justified rows, default) or 'exhibition' (framed prints on a gallery wall). */
+  layout?: 'grid' | 'exhibition';
+  /** Wall colour for the exhibition layout: 'linen' (light, default) or 'charcoal' (dark viewing room). */
+  wallTone?: 'linen' | 'charcoal';
+  /** Optional museum-label captions per photo, e.g. { "03.jpg": "First dance" }. */
+  captions?: Record<string, string>;
 }
 
 export interface Photo {
   image: ImageMetadata;
   file: string;
   alt: string;
+  caption?: string;
 }
 
 export interface Album {
@@ -38,6 +45,8 @@ export interface Album {
   date?: string;
   description?: string;
   order: number;
+  layout: 'grid' | 'exhibition';
+  wallTone: 'linen' | 'charcoal';
   photos: Photo[];
   cover: Photo;
 }
@@ -82,6 +91,7 @@ function buildAlbums(): Album[] {
       image,
       file,
       alt: `${title}, ${categoryTitle.toLowerCase()} photography, photo ${i + 1}`,
+      caption: info.captions?.[file],
     }));
 
     albums.push({
@@ -93,6 +103,8 @@ function buildAlbums(): Album[] {
       date: info.date,
       description: info.description,
       order: info.order ?? Number.MAX_SAFE_INTEGER,
+      layout: info.layout ?? 'grid',
+      wallTone: info.wallTone ?? 'linen',
       photos,
       cover: photos.find((p) => p.file === info.cover) ?? photos[0],
     });
@@ -131,3 +143,14 @@ export function formatDate(date?: string): string | undefined {
     year: 'numeric',
   });
 }
+
+/** "2026-06" → "2026"; other text unchanged. Used on museum labels. */
+export const yearOf = (date?: string) => (date && /^\d{4}/.test(date) ? date.slice(0, 4) : date);
+
+/** Museum labels for an album shown as an exhibition wall. */
+export const wallItems = (album: Album) =>
+  album.photos.map((photo) => ({
+    photo,
+    title: photo.caption ?? album.title,
+    meta: [album.location, yearOf(album.date)].filter(Boolean).join(' · '),
+  }));

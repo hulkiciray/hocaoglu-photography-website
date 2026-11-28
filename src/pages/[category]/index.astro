@@ -3,9 +3,10 @@ import { getImage } from 'astro:assets';
 import Base from '../../layouts/Base.astro';
 import AlbumCard from '../../components/AlbumCard.astro';
 import JustifiedGallery from '../../components/JustifiedGallery.astro';
+import ExhibitionWall from '../../components/ExhibitionWall.astro';
 import BookingCta from '../../components/BookingCta.astro';
 import { categories, type Category } from '../../site.config';
-import { getAlbums } from '../../lib/photos';
+import { getAlbums, wallItems } from '../../lib/photos';
 
 export function getStaticPaths() {
   return categories.map((category) => ({ params: { category: category.id }, props: { category } }));
@@ -28,7 +29,7 @@ const ogImage = cover ? (await getImage({ src: cover.image, width: 1200, format:
 
   <section class="container gallery-wrap">
     {albums.length === 0 && <p class="empty">New work coming soon.</p>}
-    {single && <JustifiedGallery photos={single.photos} />}
+    {single && single.layout === 'grid' && <JustifiedGallery photos={single.photos} />}
     {
       albums.length > 1 && (
         <div class="albums">
@@ -39,6 +40,8 @@ const ogImage = cover ? (await getImage({ src: cover.image, width: 1200, format:
       )
     }
   </section>
+
+  {single && single.layout === 'exhibition' && <ExhibitionWall items={wallItems(single)} tone={single.wallTone} />}
 
   <BookingCta title={`Planning a ${category.title.toLowerCase()} session?`} type={category.id} />
 </Base>

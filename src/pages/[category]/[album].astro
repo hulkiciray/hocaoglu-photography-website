@@ -3,9 +3,10 @@ import { url } from "../../lib/url";
 import { getImage } from 'astro:assets';
 import Base from '../../layouts/Base.astro';
 import JustifiedGallery from '../../components/JustifiedGallery.astro';
+import ExhibitionWall from '../../components/ExhibitionWall.astro';
 import BookingCta from '../../components/BookingCta.astro';
 import { categories, type Category } from '../../site.config';
-import { albumUrl, formatDate, getAlbums, type Album } from '../../lib/photos';
+import { albumUrl, formatDate, getAlbums, wallItems, type Album } from '../../lib/photos';
 
 export function getStaticPaths() {
   return categories.flatMap((category) => {
@@ -48,9 +49,15 @@ const hasSiblings = prev.slug !== album.slug;
     {album.description && <p class="desc">{album.description}</p>}
   </header>
 
-  <section class="container">
-    <JustifiedGallery photos={album.photos} />
-  </section>
+  {
+    album.layout === 'exhibition' ? (
+      <ExhibitionWall items={wallItems(album)} tone={album.wallTone} />
+    ) : (
+      <section class="container">
+        <JustifiedGallery photos={album.photos} />
+      </section>
+    )
+  }
 
   {
     hasSiblings && (

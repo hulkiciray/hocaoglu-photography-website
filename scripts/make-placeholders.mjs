@@ -55,11 +55,12 @@ const albums = [
   },
   {
     category: 'custom', slug: 'maternity-ayse', count: 7,
-    info: { title: 'Ayşe, Maternity', subtitle: 'Waiting for the little one', location: 'Studio', date: '2026-08' },
+    info: { title: 'Ayşe, Maternity', subtitle: 'Waiting for the little one', location: 'Studio', date: '2026-08',
+      layout: 'exhibition', captions: { '01.jpg': 'Waiting', '03.jpg': 'Morning light', '05.jpg': 'Hands' } },
   },
   {
     category: 'custom', slug: 'family-in-autumn', count: 8,
-    info: { title: 'The Yılmaz Family', subtitle: 'An autumn afternoon in the woods', location: 'Belgrad Forest', date: '2026-11' },
+    info: { title: 'The Yılmaz Family', subtitle: 'An autumn afternoon in the woods', location: 'Belgrad Forest', date: '2026-11', layout: 'exhibition', wallTone: 'charcoal' },
   },
 ];
 

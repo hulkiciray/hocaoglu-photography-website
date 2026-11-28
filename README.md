@@ -47,6 +47,21 @@ src/photos/
 
    All fields are optional. Without a title, the folder name is used. Albums are sorted by `order`, then newest `date`.
 
+4. **Exhibition wall (optional).** To hang an album like framed prints in a gallery (white mats, spotlights,
+   museum labels), add to its `album.json`:
+
+   ```json
+   {
+     "layout": "exhibition",
+     "wallTone": "charcoal",
+     "captions": { "01.jpg": "Waiting", "03.jpg": "Morning light" }
+   }
+   ```
+
+   - `wallTone`: `"linen"` (light wall, default) or `"charcoal"` (dark viewing room).
+   - `captions`: the italic title on each photo's label. Photos without one show the album title.
+   - Works best for albums of 6–12 photos. The home page's "Selected works" section always uses this wall.
+
 A category with **one** album shows its photos directly; with **several**, it shows album cards.
 
 **The sample albums are placeholders.** Delete them once you add real work:

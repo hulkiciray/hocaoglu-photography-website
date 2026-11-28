@@ -1,0 +1,268 @@
+---
+/**
+ * Exhibition wall: photos hung like framed prints in a gallery. White mats, thin dark frames,
+ * soft spotlights on the wall and a small museum label under each piece. Click a frame for the lightbox.
+ */
+import { Picture } from 'astro:assets';
+import type { Photo } from '../lib/photos';
+import { lightboxImage } from '../lib/lightbox';
+
+export interface WallItem {
+  photo: Photo;
+  /** First line of the museum label, e.g. the album title. */
+  title?: string;
+  /** Second line, e.g. "Bodrum · 2026". */
+  meta?: string;
+}
+
+interface Props {
+  items: WallItem[];
+  /** Wall colour. 'linen' (warm light) or 'charcoal' (dark viewing room). */
+  tone?: 'linen' | 'charcoal';
+}
+
+const { items, tone = 'linen' } = Astro.props;
+
+// Hang pieces in a varied but balanced rhythm: large, medium and small frames.
+const rhythm = ['m', 'l', 's', 'l', 'm', 's', 'm', 'l'] as const;
+
+const pieces = await Promise.all(
+  items.map(async (item, i) => {
+    const ar = item.photo.image.width / item.photo.image.height;
+    let size: 'l' | 'm' | 's' = rhythm[i % rhythm.length];
+    // Very wide photos would dominate the wall at full size.
+    if (ar > 1.4 && size === 'l') size = 'm';
+    return { ...item, ar: ar.toFixed(4), size, no: String(i + 1).padStart(2, '0'), full: await lightboxImage(item.photo) };
+  }),
+);
+---
+
+<section class:list={['wall', `wall--${tone}`]}>
+  {Astro.slots.has('default') && <div class="container wall-head"><slot /></div>}
+  <div class="hang container" data-lightbox>
+    {
+      pieces.map((p, i) => (
+        <figure class:list={['piece', `piece--${p.size}`]} style={`--ar:${p.ar}`} data-reveal>
+          <a
+            class="frame"
+            href={p.full.src}
+            data-pswp-width={p.full.width}
+            data-pswp-height={p.full.height}
+            aria-label={`View ${p.title ?? 'photo'} full screen`}
+          >
+            <span class="mat fade-img">
+              <Picture
+                src={p.photo.image}
+                formats={['avif', 'webp']}
+                widths={[480, 800, 1200]}
+                sizes="(max-width: 700px) 72vw, 32vw"
+                alt={p.photo.alt}
+                loading={i < 2 ? 'eager' : 'lazy'}
+                decoding="async"
+              />
+            </span>
+          </a>
+          <figcaption class="label">
+            <span class="no">No. {p.no}</span>
+            {p.title && <span class="title">{p.title}</span>}
+            {p.meta && <span class="meta">{p.meta}</span>}
+          </figcaption>
+        </figure>
+      ))
+    }
+  </div>
+</section>
+
+<style>
+  .wall {
+    --wall: #e8e2d8;
+    --wall-top: #efeae2;
+    --light: rgba(255, 251, 242, 0.75);
+    --frame: #1f1b18;
+    --frame-edge: #3a332e;
+    --mat: #fbfaf6;
+    --label-ink: #2a2522;
+    --label-muted: #7a7068;
+    --shadow: rgba(40, 28, 18, 0.32);
+
+    position: relative;
+    background: linear-gradient(to bottom, var(--wall-top), var(--wall) 45%);
+    padding-block: clamp(56px, 8vw, 112px) clamp(64px, 9vw, 120px);
+    overflow: hidden;
+  }
+
+  /* Baseboard along the bottom of the wall. */
+  .wall::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 14px;
+    background: color-mix(in srgb, var(--wall) 82%, #000);
+    box-shadow: 0 -1px 0 color-mix(in srgb, var(--wall) 70%, #fff);
+  }
+
+  .wall--charcoal {
+    --wall: #2b2826;
+    --wall-top: #353130;
+    --light: rgba(255, 238, 214, 0.16);
+    --frame: #0f0d0c;
+    --frame-edge: #2a2522;
+    --label-ink: #efe8de;
+    --label-muted: #a59a8f;
+    --shadow: rgba(0, 0, 0, 0.6);
+  }
+
+  .wall-head {
+    position: relative;
+    color: var(--label-ink);
+  }
+  .wall-head :global(.lead) {
+    color: var(--label-muted);
+  }
+
+  .hang {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: clamp(48px, 6vw, 96px) clamp(28px, 4vw, 72px);
+  }
+
+  .piece {
+    --h: clamp(180px, 19vw, 300px);
+    position: relative;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .piece--l {
+    --h: clamp(220px, 26vw, 400px);
+  }
+  .piece--s {
+    --h: clamp(140px, 13vw, 210px);
+  }
+
+  /* Gallery spotlight washing down the wall onto each piece. */
+  .piece::before {
+    content: '';
+    position: absolute;
+    left: -35%;
+    right: -35%;
+    top: -40%;
+    bottom: 0;
+    /* Fades out well inside its box on every side, so no hard edges show on the wall. */
+    background: radial-gradient(ellipse 48% 46% at 50% 42%, var(--light), transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .frame,
+  .label {
+    z-index: 1;
+  }
+
+  .frame {
+    position: relative;
+    display: block;
+    /* Mat border is relative to the photo's shorter side, like a real mat, so portrait frames stay slim. */
+    padding: calc(min(var(--h), var(--h) * var(--ar)) * 0.14);
+    background: var(--mat);
+    border: 9px solid var(--frame);
+    border-top-color: var(--frame-edge);
+    box-shadow:
+      0 1px 1px rgba(0, 0, 0, 0.18),
+      0 22px 34px -16px var(--shadow),
+      0 40px 60px -40px var(--shadow);
+    cursor: zoom-in;
+    transition:
+      transform 0.6s var(--ease),
+      box-shadow 0.6s var(--ease);
+  }
+
+  .frame:hover {
+    transform: translateY(-4px);
+    box-shadow:
+      0 1px 1px rgba(0, 0, 0, 0.18),
+      0 30px 44px -18px var(--shadow),
+      0 52px 70px -44px var(--shadow);
+  }
+
+  /* The bevelled inner edge of the mat. */
+  .mat {
+    display: block;
+    width: calc(var(--h) * var(--ar));
+    height: var(--h);
+    background: var(--placeholder);
+    box-shadow:
+      inset 0 0 0 1px rgba(0, 0, 0, 0.08),
+      0 0 0 1px rgba(255, 255, 255, 0.9);
+    overflow: hidden;
+  }
+  .mat :global(picture),
+  .mat :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* Museum label. */
+  .label {
+    position: relative;
+    margin-top: 22px;
+    display: grid;
+    gap: 2px;
+    color: var(--label-ink);
+    font-size: 0.82rem;
+    line-height: 1.45;
+    max-width: 100%;
+  }
+  .no {
+    font-size: 0.66rem;
+    font-weight: 500;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--label-muted);
+  }
+  .title {
+    font-family: var(--serif);
+    font-size: 1.15rem;
+    font-style: italic;
+  }
+  .meta {
+    color: var(--label-muted);
+    letter-spacing: 0.04em;
+  }
+
+  @media (max-width: 700px) {
+    .hang {
+      flex-direction: column;
+      gap: 64px;
+    }
+    /* Photo width chosen so photo + mat + frame always fit the screen (mat adds at most ~28% + 14px). */
+    .piece,
+    .piece--l,
+    .piece--s {
+      --w: min(64vw, calc(50vh * var(--ar)));
+      --h: calc(var(--w) / var(--ar));
+      align-items: center;
+      max-width: 100%;
+    }
+    .piece--s {
+      --w: min(52vw, calc(40vh * var(--ar)));
+    }
+    .frame {
+      border-width: 7px;
+    }
+    .label {
+      text-align: center;
+      justify-items: center;
+    }
+  }
+</style>
+
+<script>
+  import '../scripts/lightbox';
+</script>

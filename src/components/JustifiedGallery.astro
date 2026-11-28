@@ -3,8 +3,9 @@
  * Justified photo grid: every row has the same height and photos keep their natural proportions
  * (nothing gets cropped). Clicking a photo opens it full screen in the lightbox.
  */
-import { Picture, getImage } from 'astro:assets';
+import { Picture } from 'astro:assets';
 import type { Photo } from '../lib/photos';
+import { lightboxImage } from '../lib/lightbox';
 
 interface Props {
   photos: Photo[];
@@ -16,13 +17,10 @@ interface Props {
 
 const { photos, rowHeight = 300, eager = 4 } = Astro.props;
 
-const FULL_WIDTH = 2400;
 const items = await Promise.all(
   photos.map(async (p) => {
-    const width = Math.min(FULL_WIDTH, p.image.width);
-    const height = Math.round((p.image.height * width) / p.image.width);
-    const full = await getImage({ src: p.image, width, format: 'webp', quality: 85 });
-    return { ...p, full: full.src, width, height, ar: (p.image.width / p.image.height).toFixed(4) };
+    const full = await lightboxImage(p);
+    return { ...p, full: full.src, width: full.width, height: full.height, ar: (p.image.width / p.image.height).toFixed(4) };
   }),
 );
 ---
@@ -105,23 +103,7 @@ const items = await Promise.all(
 </style>
 
 <script>
-  import PhotoSwipeLightbox from 'photoswipe/lightbox';
-  import 'photoswipe/style.css';
-
-  document.querySelectorAll<HTMLElement>('[data-lightbox]').forEach((gallery) => {
-    const lightbox = new PhotoSwipeLightbox({
-      gallery,
-      children: 'a',
-      pswpModule: () => import('photoswipe'),
-      bgOpacity: 0.97,
-      showHideAnimationType: 'zoom',
-      imageClickAction: 'zoom',
-      tapAction: 'toggle-controls',
-      preload: [1, 2],
-      paddingFn: (viewport) => (viewport.x > 900 ? { top: 40, bottom: 40, left: 72, right: 72 } : { top: 0, bottom: 0, left: 0, right: 0 }),
-    });
-    lightbox.init();
-  });
+  import '../scripts/lightbox';
 </script>
 
 <style is:global>
